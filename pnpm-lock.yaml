@@ -211,6 +211,9 @@ importers:
         specifier: ^4.4.3
         version: 4.4.3
     devDependencies:
+      '@types/node':
+        specifier: ^20.19.41
+        version: 20.19.41
       turbo:
         specifier: ^2.9.14
         version: 2.9.14
@@ -257,7 +260,11 @@ importers:
 
   packages/ai-engine: {}
 
-  packages/config: {}
+  packages/config:
+    dependencies:
+      '@repo/schemas':
+        specifier: workspace:*
+        version: link:../schemas
 
   packages/git-engine: {}
 
