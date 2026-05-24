@@ -1,0 +1,13 @@
+node_modules
+.next
+dist
+build
+coverage
+
+.env
+.env.local
+
+storage/reviews/*
+storage/cache/*
+
+!.gitkeep   
