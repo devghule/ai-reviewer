@@ -9,12 +9,15 @@
     "esModuleInterop": true,
     "baseUrl": ".",
     "paths": {
-      "@repo/shared/*": ["packages/shared/*"],
-      "@repo/schemas/*": ["packages/schemas/*"],
-      "@repo/git-engine/*": ["packages/git-engine/*"],
-      "@repo/ai-engine/*": ["packages/ai-engine/*"],
-      "@repo/review-engine/*": ["packages/review-engine/*"],
-      "@repo/config/*": ["packages/config/*"]
+      "@repo/shared/*": ["packages/shared/src/*"],
+      "@repo/schemas": ["packages/schemas/index.ts"],
+      "@repo/schemas/*": ["packages/schemas/src/*"],
+      "@repo/git-engine/*": ["packages/git-engine/src/*"],
+      "@repo/ai-engine/*": ["packages/ai-engine/src/*"],
+      "@repo/review-engine/*": [
+        "packages/review-engine/src/*"
+      ],
+      "@repo/config/*": ["packages/config/src/*"]
     }
   }
 }
