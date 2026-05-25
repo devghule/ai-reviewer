@@ -9,15 +9,33 @@
     "esModuleInterop": true,
     "baseUrl": ".",
     "paths": {
-      "@repo/shared/*": ["packages/shared/src/*"],
-      "@repo/schemas": ["packages/schemas/index.ts"],
-      "@repo/schemas/*": ["packages/schemas/src/*"],
-      "@repo/git-engine/*": ["packages/git-engine/src/*"],
-      "@repo/ai-engine/*": ["packages/ai-engine/src/*"],
-      "@repo/review-engine/*": [
-        "packages/review-engine/src/*"
-      ],
-      "@repo/config/*": ["packages/config/src/*"]
-    }
+  "@repo/shared/*": ["packages/shared/src/*"],
+
+  "@repo/schemas": ["packages/schemas/index.ts"],
+  "@repo/schemas/*": ["packages/schemas/src/*"],
+
+  "@repo/git-engine": [
+    "packages/git-engine/index.ts"
+  ],
+  "@repo/git-engine/*": [
+    "packages/git-engine/src/*"
+  ],
+
+  "@repo/ai-engine": [
+    "packages/ai-engine/index.ts"
+  ],
+  "@repo/ai-engine/*": [
+    "packages/ai-engine/src/*"
+  ],
+
+  "@repo/review-engine": [
+    "packages/review-engine/index.ts"
+  ],
+  "@repo/review-engine/*": [
+    "packages/review-engine/src/*"
+  ],
+
+  "@repo/config/*": ["packages/config/src/*"]
+}
   }
 }

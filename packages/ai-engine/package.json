@@ -3,5 +3,10 @@
   "version": "1.0.0",
   "private": true,
   "main": "index.ts",
-  "types": "index.ts"
+  "types": "index.ts",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.98.0",
+    "@google/generative-ai": "^0.24.1",
+    "openai": "^6.39.0"
+  }
 }
