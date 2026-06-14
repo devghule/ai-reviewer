@@ -1,0 +1,19 @@
+{
+  "repos": [
+    {
+      "name": "backend",
+      "path": "C:/work/backend",
+      "targetBranch": "dev"
+    },
+    {
+      "name": "webapp",
+      "path": "C:/work/webapp",
+      "targetBranch": "dev"
+    },
+    {
+      "name": "android",
+      "path": "C:/work/android",
+      "targetBranch": "dev"
+    }
+  ]
+}

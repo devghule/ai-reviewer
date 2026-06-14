@@ -1,13 +1,21 @@
-node_modules
-.next
-dist
-build
-coverage
+# Next.js
+.next/
+out/
 
-.env
+# Dependencies
+node_modules/
+
+# Environment — contains API keys, never commit
 .env.local
+.env*.local
 
-storage/reviews/*
-storage/cache/*
+# Repo config — contains local machine paths, never commit
+config/repos.json
+config/selected-model.json
 
-!.gitkeep   
+# Reviews — temporary local storage
+reviews/
+
+# OS
+.DS_Store
+Thumbs.db
