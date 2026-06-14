@@ -17,6 +17,7 @@ interface RepoInfo {
   targetBranch: string
   currentBranch: string | null
   isValid: boolean
+  changedFilesCount: number | null
 }
 
 const REVIEW_MODES: Array<{
@@ -24,14 +25,15 @@ const REVIEW_MODES: Array<{
   label: string
   icon: React.ElementType
   description: string
-  time: string
+  // seconds per file (used to compute dynamic estimate)
+  secsPerFile: number
 }> = [
-  { mode: 'quick',        label: 'Quick',        icon: Zap,           description: 'Null handling, obvious bugs',         time: '~1 min'  },
-  { mode: 'deep',         label: 'Deep',          icon: Search,        description: 'Full pre-PR review',                 time: '~3 min'  },
-  { mode: 'cross-repo',   label: 'Cross-Repo',    icon: GitPullRequest,description: 'DTO & API drift detection',           time: '~4 min'  },
-  { mode: 'architecture', label: 'Architecture',  icon: Building2,     description: 'Layering & coupling analysis',        time: '~3 min'  },
-  { mode: 'optimization', label: 'Optimization',  icon: TrendingUp,    description: 'Performance & scalability',           time: '~3 min'  },
-  { mode: 'detailed',     label: 'Detailed',      icon: AlignLeft,     description: 'Maximum depth — everything',          time: '~6 min'  },
+  { mode: 'quick',        label: 'Quick',        icon: Zap,            description: 'Null handling, obvious bugs',  secsPerFile: 4  },
+  { mode: 'deep',         label: 'Deep',         icon: Search,         description: 'Full pre-PR review',           secsPerFile: 10 },
+  { mode: 'cross-repo',   label: 'Cross-Repo',   icon: GitPullRequest, description: 'DTO & API drift detection',    secsPerFile: 12 },
+  { mode: 'architecture', label: 'Architecture', icon: Building2,      description: 'Layering & coupling analysis', secsPerFile: 10 },
+  { mode: 'optimization', label: 'Optimization', icon: TrendingUp,     description: 'Performance & scalability',    secsPerFile: 10 },
+  { mode: 'detailed',     label: 'Detailed',     icon: AlignLeft,      description: 'Maximum depth — everything',   secsPerFile: 18 },
 ]
 
 const REPO_COLORS: Record<string, string> = {
@@ -43,6 +45,15 @@ const REPO_ICON_COLORS: Record<string, string> = {
   backend: 'text-violet-500',
   webapp:  'text-sky-500',
   android: 'text-emerald-500',
+}
+
+function estimateTime(fileCount: number | null, secsPerFile: number): string {
+  if (fileCount === null) return '~?'
+  const batches = Math.max(1, Math.ceil(fileCount / 5))
+  const totalSecs = batches * secsPerFile
+  if (totalSecs < 60) return `~${totalSecs}s`
+  const mins = Math.round(totalSecs / 60)
+  return `~${mins} min`
 }
 
 export default function HomePage() {
@@ -68,6 +79,9 @@ export default function HomePage() {
 
   const repoInfo = repos.find((r) => r.name === selectedRepo)
   const modeInfo = REVIEW_MODES.find((m) => m.mode === selectedMode)
+  const timeEstimate = modeInfo
+    ? estimateTime(repoInfo?.changedFilesCount ?? null, modeInfo.secsPerFile)
+    : '~?'
 
   async function startReview() {
     if (!selectedRepo || reviewing) return
@@ -155,6 +169,11 @@ export default function HomePage() {
                   <div className="flex items-center gap-2 mb-2">
                     <GitBranch className={cn('w-4 h-4', iconColor)} />
                     <span className="text-sm font-semibold capitalize">{repo.name}</span>
+                    {repo.changedFilesCount !== null && (
+                      <span className="ml-auto text-[11px] bg-muted px-2 py-0.5 rounded-full text-muted-foreground">
+                        {repo.changedFilesCount} file{repo.changedFilesCount !== 1 ? 's' : ''} changed
+                      </span>
+                    )}
                   </div>
                   <div className="text-xs text-muted-foreground space-y-0.5">
                     <div className="flex items-center gap-1.5">
@@ -184,8 +203,9 @@ export default function HomePage() {
         <section className="mb-8">
           <Label>Review Mode</Label>
           <div className="grid grid-cols-3 gap-2">
-            {REVIEW_MODES.map(({ mode, label, icon: Icon, description, time }) => {
+            {REVIEW_MODES.map(({ mode, label, icon: Icon, description, secsPerFile }) => {
               const active = selectedMode === mode
+              const t = estimateTime(repoInfo?.changedFilesCount ?? null, secsPerFile)
               return (
                 <button
                   key={mode}
@@ -199,7 +219,7 @@ export default function HomePage() {
                 >
                   <div className="flex items-center justify-between mb-2">
                     <Icon className={cn('w-4 h-4', active ? 'text-primary' : 'text-muted-foreground')} />
-                    <span className="text-[10px] text-muted-foreground font-mono">{time}</span>
+                    <span className="text-[10px] text-muted-foreground font-mono">{t}</span>
                   </div>
                   <p className={cn('text-sm font-semibold mb-0.5', active && 'text-primary')}>{label}</p>
                   <p className="text-[11px] text-muted-foreground leading-snug">{description}</p>
@@ -214,9 +234,7 @@ export default function HomePage() {
           <div className="mb-5 flex items-start gap-3 p-4 rounded-xl border border-orange-200 bg-orange-50 dark:border-orange-900 dark:bg-orange-950/40">
             <AlertTriangle className="w-4 h-4 text-orange-500 shrink-0 mt-0.5" />
             <div>
-              <p className="text-sm font-semibold text-orange-800 dark:text-orange-200">
-                Cross-repo impact likely
-              </p>
+              <p className="text-sm font-semibold text-orange-800 dark:text-orange-200">Cross-repo impact likely</p>
               <p className="text-xs text-orange-700 dark:text-orange-300 mt-0.5">
                 DTO, enum, or API changes detected. Consider running Cross-Repo review to check impact on{' '}
                 <strong>{crossRepoHint.join(', ')}</strong>.
@@ -245,16 +263,20 @@ export default function HomePage() {
           disabled={!selectedRepo || reviewing}
           className="w-full h-12 text-base font-semibold shadow-sm"
         >
-          {reviewing
-            ? 'Reviewing…'
-            : `Start ${modeInfo?.label ?? ''} Review`}
+          {reviewing ? 'Reviewing…' : `Start ${modeInfo?.label ?? ''} Review`}
           {!reviewing && <ArrowRight className="w-4 h-4 ml-1" />}
         </Button>
 
         {repoInfo && !reviewing && (
           <p className="text-center text-xs text-muted-foreground mt-3">
-            Comparing <span className="font-mono">{repoInfo.currentBranch ?? 'HEAD'}</span>{' '}
-            against <span className="font-mono">{repoInfo.targetBranch}</span> · {modeInfo?.time}
+            Comparing{' '}
+            <span className="font-mono">{repoInfo.currentBranch ?? 'HEAD'}</span>{' '}
+            against{' '}
+            <span className="font-mono">{repoInfo.targetBranch}</span>
+            {repoInfo.changedFilesCount !== null && (
+              <> · {repoInfo.changedFilesCount} changed file{repoInfo.changedFilesCount !== 1 ? 's' : ''}</>
+            )}
+            {' '}· {timeEstimate}
           </p>
         )}
       </div>

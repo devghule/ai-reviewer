@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { RefreshCw, CheckCircle } from 'lucide-react'
+import { RefreshCw, CheckCircle, Save } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import toast from 'react-hot-toast'
@@ -21,9 +21,16 @@ interface ModelInfo {
   }>
 }
 
+interface Settings {
+  retentionDays: number
+}
+
 export default function SettingsPage() {
   const [models, setModels] = useState<ModelInfo | null>(null)
   const [refreshing, setRefreshing] = useState(false)
+  const [settings, setSettings] = useState<Settings | null>(null)
+  const [retention, setRetention] = useState<number>(14)
+  const [savingRetention, setSavingRetention] = useState(false)
 
   function fetchModels() {
     fetch('/api/models')
@@ -32,8 +39,19 @@ export default function SettingsPage() {
       .catch(() => {})
   }
 
+  function fetchSettings() {
+    fetch('/api/settings')
+      .then((r) => r.json())
+      .then((data: Settings) => {
+        setSettings(data)
+        setRetention(data.retentionDays)
+      })
+      .catch(() => {})
+  }
+
   useEffect(() => {
     fetchModels()
+    fetchSettings()
   }, [])
 
   async function refreshModels() {
@@ -48,6 +66,33 @@ export default function SettingsPage() {
       setRefreshing(false)
     }
   }
+
+  async function saveRetention() {
+    const val = Number(retention)
+    if (!Number.isInteger(val) || val < 1 || val > 90) {
+      toast.error('Retention must be 1–90 days')
+      return
+    }
+    setSavingRetention(true)
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ retentionDays: val }),
+      })
+      if (!res.ok) throw new Error()
+      const updated: Settings = await res.json()
+      setSettings(updated)
+      setRetention(updated.retentionDays)
+      toast.success('Retention updated')
+    } catch {
+      toast.error('Failed to save settings')
+    } finally {
+      setSavingRetention(false)
+    }
+  }
+
+  const retentionChanged = settings !== null && retention !== settings.retentionDays
 
   return (
     <div className="p-8 max-w-2xl">
@@ -142,16 +187,55 @@ export default function SettingsPage() {
         )}
       </section>
 
+      {/* Review retention */}
+      <section className="mb-8">
+        <h2 className="text-sm font-semibold mb-3 text-muted-foreground uppercase tracking-wide">
+          Storage
+        </h2>
+        <div className="p-4 rounded-lg border">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-medium">Review retention</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Reviews older than this are automatically deleted on startup.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <input
+                type="number"
+                min={1}
+                max={90}
+                value={retention}
+                onChange={(e) => setRetention(Number(e.target.value))}
+                className="w-20 h-8 text-sm text-center rounded-md border bg-background px-2 focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              <span className="text-sm text-muted-foreground">days</span>
+              {retentionChanged && (
+                <Button
+                  size="sm"
+                  onClick={saveRetention}
+                  disabled={savingRetention}
+                  className="h-8"
+                >
+                  <Save className="w-3.5 h-3.5 mr-1.5" />
+                  {savingRetention ? 'Saving…' : 'Save'}
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Config notes */}
       <section>
         <h2 className="text-sm font-semibold mb-3 text-muted-foreground uppercase tracking-wide">
-          Configuration
+          Configuration Files
         </h2>
-        <div className="space-y-3 text-sm">
+        <div className="space-y-2 text-sm">
           <ConfigNote
             label="repos.json"
-            value="config/repos.json (gitignored)"
-            note="Add your repo paths here"
+            value="config/repos.json"
+            note="Your repo paths (gitignored — not committed)"
           />
           <ConfigNote
             label="GEMINI_API_KEY"
@@ -162,11 +246,6 @@ export default function SettingsPage() {
             label="OPENROUTER_API_KEY"
             value=".env.local"
             note="Required for fallback — get from openrouter.ai"
-          />
-          <ConfigNote
-            label="Review retention"
-            value="14 days"
-            note="Reviews older than 14 days are deleted on startup"
           />
         </div>
       </section>
@@ -184,12 +263,12 @@ function ConfigNote({
   note: string
 }) {
   return (
-    <div className="flex items-start justify-between p-3 rounded-md border">
+    <div className="flex items-start justify-between p-3 rounded-md border gap-4">
       <div>
         <p className="font-medium">{label}</p>
         <p className="text-xs text-muted-foreground">{note}</p>
       </div>
-      <code className="text-xs bg-muted px-2 py-1 rounded">{value}</code>
+      <code className="text-xs bg-muted px-2 py-1 rounded shrink-0">{value}</code>
     </div>
   )
 }

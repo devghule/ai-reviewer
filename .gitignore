@@ -12,9 +12,10 @@ node_modules/
 # Repo config — contains local machine paths, never commit
 config/repos.json
 config/selected-model.json
+config/settings.json
 
-# Reviews — temporary local storage
-reviews/
+# Reviews — JSON files are temporary, directory is tracked via .gitkeep
+reviews/*.json
 
 # OS
 .DS_Store

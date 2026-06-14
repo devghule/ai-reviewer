@@ -1,5 +1,6 @@
 import { loadRepos } from '@/lib/config'
 import { getCurrentBranch, validateRepo } from '@/lib/git'
+import simpleGit from 'simple-git'
 
 export async function GET() {
   try {
@@ -8,17 +9,21 @@ export async function GET() {
     const enriched = await Promise.all(
       repos.map(async (repo) => {
         const valid = await validateRepo(repo.path)
-        let branch = null
+        let branch: string | null = null
+        let changedFilesCount: number | null = null
 
         if (valid) {
           try {
             branch = await getCurrentBranch(repo.path)
+            const git = simpleGit(repo.path)
+            const raw = await git.raw(['diff', '--name-only', `${repo.targetBranch}...HEAD`])
+            changedFilesCount = raw.trim() ? raw.trim().split('\n').length : 0
           } catch {
-            branch = null
+            // repo valid but diff failed — branch might not exist yet
           }
         }
 
-        return { ...repo, currentBranch: branch, isValid: valid }
+        return { ...repo, currentBranch: branch, isValid: valid, changedFilesCount }
       }),
     )
 
