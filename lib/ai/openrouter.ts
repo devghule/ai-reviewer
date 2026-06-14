@@ -19,7 +19,6 @@ export async function createOpenRouterProvider(): Promise<AIProvider> {
         body: JSON.stringify({
           model: modelId,
           messages: [{ role: 'user', content: prompt }],
-          response_format: { type: 'json_object' },
         }),
       })
 

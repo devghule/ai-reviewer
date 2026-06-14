@@ -9,7 +9,7 @@ function createGeminiProvider(): AIProvider {
     async generate(prompt: string): Promise<string> {
       const model = client.getGenerativeModel({
         model: 'gemini-2.5-pro',
-        generationConfig: { responseMimeType: 'application/json' },
+        generationConfig: {},
       })
       const result = await model.generateContent(prompt)
       return result.response.text()

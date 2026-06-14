@@ -30,6 +30,9 @@ export async function runReviewPipeline(opts: {
 
   // Cross-repo detection runs before review
   const crossRepoResult = detectCrossRepoImpact(files)
+  if (crossRepoResult.detected) {
+    emit({ type: 'cross-repo-hint', affectedRepos: ['webapp', 'android'].filter((r) => r !== repoName) })
+  }
 
   // Separate files into small (batchable) and large (individual)
   const smallFiles = files.filter(
